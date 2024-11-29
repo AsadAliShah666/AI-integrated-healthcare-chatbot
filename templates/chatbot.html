@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatbot</title>
+
+  <!-- Include necessary CSS and JavaScript libraries -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+
+  <style>
+    body {
+      background-color: #f4f4f4;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Chat Container */
+    .chat-container {
+      max-width: 600px;
+      margin: 50px auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Chat Box */
+    .chat-box {
+      height: 400px;
+      overflow-y: scroll;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background-color: #fafafa;
+    }
+
+    /* Header Section */
+    .chatbox__header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .chatbox__image--header img {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+    }
+
+    .chatbox__content--header h4 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+
+    .chatbox__content--header p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #777;
+    }
+
+    /* Message Styles */
+    .chat-message {
+      display: block;
+      padding: 8px 15px;
+      margin: 5px 0;
+      border-radius: 10px;
+      max-width: 70%;
+    }
+
+    /* User Message */
+    .chat-message.user {
+      background-color: #cfe2f3;
+      margin-left: auto;
+      text-align: right;
+      border-radius: 10px 10px 0 10px;
+    }
+
+    /* Bot Message */
+    .chat-message.bot {
+      background-color: #e2e3e5;
+      text-align: left;
+      border-radius: 10px 10px 10px 0;
+    }
+
+    /* Input Container */
+    .input-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Input Field */
+    .input-container input {
+      width: 85%;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+    }
+
+    /* Send Button */
+    .input-container button {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .input-container button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Chatbot Button Styling */
+    .chatbox__button button {
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .chatbox__button img {
+      width: 60px;
+      height: 50px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container chat-container">
+    <div class="chatbox">
+      <div class="chatbox__button">
+        <button><img src="{{ url_for('static', filename='images/message.jpg') }}" style="width: 60px; height:50px;" /></button>
+      </div>
+
+      <div class="chatbox__support">
+        <div class="chatbox__header">
+          <div class="chatbox__image--header">
+            <img src="{{ url_for('static', filename='images/bot.jpg') }}" alt="bot image" style="width: 45px; height: 45px; border-radius: 50px;">
+          </div>
+          <div class="chatbox__content--header">
+            <h4>Symptom Checker</h4>
+            <p>Hi, Enter symptoms and get a list of potential conditions</p>
+          </div>
+        </div>
+
+        <div class="chat-box" id="chat-box">
+          <!-- Chat messages will be appended here -->
+          <div class="chat-message bot">Hi, this is a medical chat support.</div>
+          <div class="chat-message bot">May I know your name?</div>
+        </div>
+
+        <div class="input-container">
+          <input type="text" id="user-input" placeholder="Ask me anything..." />
+          <button id="send-btn">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Get elements
+    const chatBox = document.getElementById("chat-box");
+    const userInput = document.getElementById("user-input");
+    const sendButton = document.getElementById("send-btn");
+
+    // Function to append message to the chatbox
+    function appendMessage(message, sender) {
+      const messageDiv = document.createElement("div");
+      messageDiv.classList.add("chat-message", sender);
+      messageDiv.textContent = message;
+      chatBox.appendChild(messageDiv);
+      chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to the latest message
+    }
+
+    // Function to send message
+    sendButton.addEventListener("click", async () => {
+      const message = userInput.value.trim();
+      if (message) {
+        // Append user's message to chat
+        appendMessage(message, "user");
+        userInput.value = ""; // Clear input field
+
+        try {
+          // Send the user's message to the backend for prediction
+          const response = await fetch("/predict", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ message: message }),
+          });
+
+          const data = await response.json();
+          const botReply = data.answer || "Sorry, I didn't understand that.";
+
+          // Append bot's reply to chat
+          appendMessage(botReply, "bot");
+        } catch (error) {
+          console.error("Error:", error);
+          appendMessage("Sorry, something went wrong.", "bot");
+        }
+      }
+    });
+
+    // Allow pressing Enter to send the message
+    userInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        sendButton.click();
+      }
+    });
+  </script>
+
+</body>
+
+</html>

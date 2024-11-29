@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+    <div>
+        <h1>Chat with our AI Assistant</h1>
+        <textarea id="user_message" placeholder="Ask something..." rows="4" cols="50"></textarea>
+        <br>
+        <button id="send_message">Send</button>
+    </div>
+
+    <div id="chat_response">
+        <p id="response_text"></p>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            $("#send_message").click(function () {
+                const userMessage = $("#user_message").val();
+
+                $.ajax({
+                    url: "/predict",
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({ "message": userMessage }),
+                    success: function (response) {
+                        $("#response_text").text(response.answer);
+                    },
+                    error: function () {
+                        $("#response_text").text("Sorry, there was an error. Please try again.");
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
